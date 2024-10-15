@@ -62,6 +62,7 @@ It process only:
 
 The event loop is a loop that constantly checks if the call stack is empty. If the call stack is empty, the event loop looks for pending tasks in the microtask queue and then the task queue. It pulls tasks from these queues and pushes them onto the call stack for execution.
 
+## Javascript runtime:
 ![event loop](./assets/eventloop.png)
 
 ## Working
