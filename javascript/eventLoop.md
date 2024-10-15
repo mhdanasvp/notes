@@ -1,4 +1,4 @@
-# Event loop working
+# Working of event loop
 
 The event loop is a crucial mechanism in JavaScript that enables asynchronous programming. It ensures that non-blocking operations (like I/O, network requests, or timers) are executed efficiently, allowing JavaScript to remain responsive, even when some tasks take time to complete.
 
