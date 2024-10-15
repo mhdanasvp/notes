@@ -6,11 +6,17 @@ The event loop is a crucial mechanism in JavaScript that enables asynchronous pr
 * **Synchronous**: code runs in a sequence, meaning one operation is executed after the previous one completes
 * **Asynchronous**: allows other operations to run while waiting for an operation to complete.
 
-![libuv](./libuv.png)
+![libuv](./assets/libuv.png)
 
-Async operations will offload to Libuv. Libuv will run the task using native  async mechanism of OS, if it is not possible then it uses the threadpool to run the task and ensuring that the main thread is not blocked.
+Async operations will offload to Libuv. Libuv will run the task using native  async mechanism of OS, if it is not possible then it uses the threadpool to run the task and ensuring that the main thread is not blocked.  
 
-> Event loop written in C program that orchestrates or co-ordinates the execution of sync and async code in node js. it co-ordinares the execution of callbacks in six ques, they are __nextTick,Promise, timer, i/o, check, close__.
+* **On Unix-like systems (Linux, macOS, etc.)**: it might use epoll, kqueue, or select to efficiently monitor file descriptors.
+* **On Windows, it uses I/O Completion Ports (IOCP)**: a native mechanism that allows high-performance, asynchronous I/O operations.
+* **Thread Pool**: If the operation cannot be handled natively by the OS asynchronously, libuv offloads the task to a thread pool (by default, the thread pool has 4 threads). The thread pool handles potentially blocking operations (like file I/O, DNS lookups) in the background, so the main thread is free to continue executing other tasks.
+
+
+
+> Event loop written in C program that orchestrates or co-ordinates the execution of sync and async code in node js. it co-ordinares the execution of callbacks in six ques, they are **nextTick,Promise, timer, i/o, check, close**.
 
 ## Key Components
 
@@ -56,7 +62,7 @@ It process only:
 
 The event loop is a loop that constantly checks if the call stack is empty. If the call stack is empty, the event loop looks for pending tasks in the microtask queue and then the task queue. It pulls tasks from these queues and pushes them onto the call stack for execution.
 
-![event loop](./eventloop.png)
+![event loop](./assets/eventloop.png)
 
 ## Working
 
@@ -93,7 +99,7 @@ The event loop is a loop that constantly checks if the call stack is empty. If t
 8. all callbacks in the close queue
 9. for final time in the same queue, Any callback in the microtask queue . First task in the nextTick queue, Then Promise Queue.
 
-![loop](./loop.png)
+![loop](./assets/loop.png)
 
 > if there are more callbacks to execute, then the loop kept alive for one more run and the same steps are repeated. if all callbacks executed and there is no more code to execute, then thhe event loop exits.  
 
@@ -219,7 +225,6 @@ Promise.resolve().then(() => console.log("promise "))
 ```
 
 in above case setImmediate callback execute before i/o callback. becouse  I/O operations are polled and callback functions are added to the I/O queue only after the I/O is complete. So the i/o callback considered in the next iteration of event loop.
-
 
 ```javascript
 setTimeout(() => console.log("setTimeout "), 0)
