@@ -22,6 +22,9 @@ function myFunction() {
 const myFunction = function() {
   console.log("This is a function expression");
 };
+const myFunction2 = () => {
+  console.log("This is a function expression");
+};
 ```
 
 
