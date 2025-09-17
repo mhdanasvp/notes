@@ -74,6 +74,11 @@ For connection-related issues, you can search for "connection":
     grep -i "memory" /var/log/mongodb/mongod.log
     ```
 
+* **nreturned** : Number of documents returned (shows massive queries)
+* **millis** : Time taken (shows slow queries)
+* **docsExamined, keysExamined** : High numbers mean heavy queries
+* **Query filter and namespace** : Shows what was run, on which collection
+
 ### c. Use db.currentOp()
 
 MongoDB provides an operation (currentOp) to see the currently running operations. You can check for long-running queries that might be blocking other operations.
@@ -109,13 +114,33 @@ db.system.profile.drop() // drop profile
 
 **was**: Indicates the current profiling level.  
 **slowms**: The threshold in milliseconds for what is considered a "slow" operation, which is used for profiling level 1.  
-**sampleRate**: The percentage of slow operations to be profiled, as a value between 0 and 1.
+**sampleRate**: The percentage of slow operations to be profiled, as a value between 0 and 1.  
 
-> **This will log queries that take longer than 100ms. You can analyze these queries and optimize them.**
+* If sampleRate: 1, both slow queries will be recorded (2 out of 2).
+* If sampleRate: 0.5, on average, 1 out of 2 slow queries will be recorded (50% chance for each slow query to be logged).
+* If sampleRate: 0.2, on average, 0.4 out of 2 slow queries will be recorded (20% chance for each slow query to be logged).
+
+> **This will log queries that take longer than 100ms (specified ms). You can analyze these queries and optimize them.**
 
 ```js
 db.system.profile.find().sort({ ts: -1 }).limit(5)
 ```
+
+*additionally:*
+
+* MongoDB Profiler is per-node and per-database.
+* The profiler on the primary node captures only operations executed on that primary.
+* If your application sends read operations to a secondary (using readPreference: "secondary"), those reads are executed on the secondary node only.
+* Profiling on the primary will NOT capture queries that are run on the secondary node.
+
+    | Operation Runs On | Profiler Captures? | Logs Capture?      |
+    |-------------------|--------------------|--------------------|
+    | Primary           | Yes                | Yes                |
+    | Secondary         | No                 | Yes (logs only)    |
+
+* Profiler on primary: Only profiles queries executed there (including reads directed to primary).
+* Profiler on secondary: Not possible.
+* Reads sent to secondary: Only visible in MongoDB logs, not profiler.
 
 ## 2. Check Server Resource Utilization
 
@@ -222,7 +247,7 @@ storage:
 ### b. Replica Set and Sharding
 
 * Sharding: If your dataset is growing large, consider implementing sharding to distribute the load across multiple nodes.
-* Replica Set: If you're using a replica set, ensure your read/write operations are properly balanced between primary and secondary nodes.
+* Replica Set: If you're using a replica set, ensure your read/write operations are properly balanced between primary and secondary nodes.  
 
 ## 6. Scaling MongoDB
 
@@ -231,3 +256,34 @@ If your current hardware is inadequate, consider scaling your MongoDB deployment
 * Horizontal scaling: Implement sharding to distribute your data across multiple servers.
 * Vertical scaling: Upgrade your server (more CPU, RAM, faster disks).
 * Replica sets: If read-heavy, distribute load with replica sets.
+
+----
+
+## *Extra notes:*
+
+### 1. What Load Does a Large Query Cause?
+
+#### High Memory Usage
+
+* MongoDB needs to read and temporarily store a large result set in memory or on disk (if not enough RAM).
+* This can cause increased RAM consumption, and if memory is exhausted, can lead to swapping (very slow).
+
+#### Increased CPU Usage
+
+> Serializing and transferring a huge amount of data takes CPU resources.
+Disk I/O Spike
+
+> If the documents aren’t cached, MongoDB must read them from disk, causing high disk I/O.
+This can slow down all database operations.
+
+#### Network Load
+
+> Transferring 500,000 documents over the network can saturate your network bandwidth and make the client/driver slow.
+>
+#### Cursor Timeouts
+
+* If your client can’t process the data quickly, cursors may timeout, leading to incomplete data fetches.
+
+#### Impact on Other Operations
+
+Large queries can block or slow down other queries and writes, degrading overall database performance.
